@@ -1,0 +1,138 @@
+# Carescape Parameter Sample Drift Dictionary.
+# Contains PARENT/CHILD tags that designates the number of samples expected
+# for a duration in seconds.
+{
+  # U-TT Carescape Parameter
+  # Temperature values
+  ACTIVE_CABLE_TEMP:
+  {
+    TEMP1: {samples: 2000, seconds: 2000.0},
+    TEMP2: {samples: 2000, seconds: 2000.0},
+    TEMP1_CAL_CHECK_STATUS: {samples: 1000, seconds: 1000.0},
+    TEMP2_CAL_CHECK_STATUS: {samples: 1000, seconds: 1000.0},
+    TEMP1_EXCITATION_CURRENT_STATUS: {samples: 1000, seconds: 1000.0},
+    TEMP2_EXCITATION_CURRENT_STATUS: {samples: 1000, seconds: 1000.0},
+    TEMP_CABLE_FAULT: {samples: 1000, seconds: 1000.0},
+    TEMP_SENSOR_INTERFACE_CABLE_ID: {samples: 1000, seconds: 1000.0}
+  },
+
+  # U-PP Carescape Parameter CHANNEL 1
+  # Invasive blood pressure waveform
+  ACTIVE_CABLE_IBP1:
+  {
+    WAVEFORM: {samples: 6000, seconds: 50.0},
+    TRANSDUCER_DRIVE_VOLTAGE: {samples: 1000, seconds: 133.333},
+    CABLE_FAULT: {samples: 1000, seconds: 1000},
+    SENSOR_INTERFACE_CABLE_ID: {samples: 1000, seconds: 1000}
+  },
+
+  # U-PP Carescape Parameter CHANNEL 2
+  # Invasive blood pressure waveform
+  ACTIVE_CABLE_IBP2:
+  {
+    WAVEFORM: {samples: 6000, seconds: 50.0},
+    TRANSDUCER_DRIVE_VOLTAGE: {samples: 1000, seconds: 133.333},
+    CABLE_FAULT: {samples: 1000, seconds: 1000},
+  },
+
+  # U-PP Carescape Parameter CHANNEL 3
+  # Invasive blood pressure waveform
+  ACTIVE_CABLE_IBP3:
+  {
+    WAVEFORM: {samples: 6000, seconds: 50.0},
+    TRANSDUCER_DRIVE_VOLTAGE: {samples: 1000, seconds: 133.333},
+    CABLE_FAULT: {samples: 1000, seconds: 1000},
+    SENSOR_INTERFACE_CABLE_ID: {samples: 1000, seconds: 1000}
+  },
+
+  # U-PP Carescape Parameter CHANNEL 4
+  # Invasive blood pressure waveform
+  ACTIVE_CABLE_IBP4:
+  {
+    WAVEFORM: {samples: 6000, seconds: 50.0},
+    TRANSDUCER_DRIVE_VOLTAGE: {samples: 1000, seconds: 133.333},
+    CABLE_FAULT: {samples: 1000, seconds: 1000},
+  },
+
+  # U-PP Carescape Parameter
+  # Invasive blood pressure analog output
+  ACTIVE_CABLE_AO_IBP:
+  {
+    WAVEFORM: {samples: 6000, seconds: 50.0},
+    ZERO_OFFSET_STATUS_CH1: {samples: 1000, seconds: 1000.0},
+    WAVEFORM_ENABLED_STATUS_CH1: {samples: 1000, seconds: 1000.0},
+    ZERO_OFFSET_STATUS_CH2: {samples: 1000, seconds: 1000.0},
+    WAVEFORM_ENABLED_STATUS_CH2: {samples: 1000, seconds: 1000.0},
+    ZERO_OFFSET_STATUS_CH3: {samples: 1000, seconds: 1000.0},
+    WAVEFORM_ENABLED_STATUS_CH3: {samples: 1000, seconds: 1000.0},
+    ZERO_OFFSET_STATUS_CH4: {samples: 1000, seconds: 1000.0},
+    WAVEFORM_ENABLED_STATUS_CH4: {samples: 1000, seconds: 1000.0}
+  },
+
+  # U-RE Carescape Parameter
+  # ECG analog output
+  ACTIVE_CABLE_AO_ECG:
+  {
+    LEAD: {samples: 7200, seconds: 60.0},
+    MARKER_FLAG: {samples: 7200, seconds: 60.0},
+    FILTER_SELECT_STATUS: {samples: 1000, seconds: 1000},
+    LEAD_SELECT_STATUS: {samples: 1000, seconds: 1000}
+  },
+
+  # U-RE Carescape Parameter
+  # Respiration waveform
+  ACTIVE_CABLE_RESP:
+  {
+    WAVEFORM: {samples: 3000, seconds: 50.0},
+    LEADFAIL: {samples: 1000, seconds: 133.333},
+    LEAD_SELECT_STATUS: {samples: 1000, seconds: 1000},
+    CARRIER_SELECT_STATUS: {samples: 1000, seconds: 1000},
+    CABLE_FAULT: {samples: 1000, seconds: 1000},
+  },
+
+  # U-RE Carescape Parameter
+  # ECG waveforms
+  ACTIVE_CABLE_ECG:
+  {
+    WAVEFORM_I: {samples: 7200, seconds: 60.0},
+    WAVEFORM_II: {samples: 7200, seconds: 60.0},
+    WAVEFORM_III: {samples: 7200, seconds: 60.0},
+    WAVEFORM_V1: {samples: 7200, seconds: 60.0},
+    WAVEFORM_V2: {samples: 7200, seconds: 60.0},
+    WAVEFORM_V3: {samples: 7200, seconds: 60.0},
+    WAVEFORM_V4: {samples: 7200, seconds: 60.0},
+    WAVEFORM_V5: {samples: 7200, seconds: 60.0},
+    WAVEFORM_V6: {samples: 7200, seconds: 60.0},
+    QRS_PACE_FLAG: {samples: 7200, seconds: 60.0},
+    DC_LEADFAIL_STATUS_LEADS: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_STATUS_ELECTRODES: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_I: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_II: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_III: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_RD: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_V1: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_V2: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_V3: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_V4: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_V5: {samples: 1000, seconds: 133.333},
+    DC_LEADFAIL_V6: {samples: 1000, seconds: 133.333},
+    CABLE_FAULT: {samples: 1000, seconds: 1000},
+    INTERPOLATION_ON_OFF_STATUS: {samples: 1000, seconds: 1000},
+    LINE_FREQUENCY_FILTER_SELECT_STATUS: {samples: 1000, seconds: 1000},
+    PACE_ON_OFF_STATUS: {samples: 1000, seconds: 1000},
+    PACE_SENSITIVITY_STATUS: {samples: 1000, seconds: 1000},
+    PACE_VECTORS_STATUS: {samples: 1000, seconds: 1000},
+    PACE_VECTORS_VALID_STATUS: {samples: 1000, seconds: 1000},
+    RA_BUFFER: {samples: 1000, seconds: 1000},
+    REFERENCE_ELECTRODE_STATUS: {samples: 1000, seconds: 1000},
+    RL_BUFFER: {samples: 1000, seconds: 1000},
+    V_V1_BUFFER: {samples: 1000, seconds: 1000}
+  },
+
+  # Generic Cable service tag
+  ACTIVE_CABLE_SERVICE:
+  {
+    URE_RAIL_3V: {samples: 1000, seconds: 1000},
+    URE_RAIL_5V: {samples: 1000, seconds: 1000}
+  }
+}

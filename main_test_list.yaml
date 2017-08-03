@@ -1,0 +1,40 @@
+# usb_tld_metrics test list.
+# Contains a list of LeCroy exported CSV files to analyze.
+# This is an array of dictionaries contain the tests to be run.
+[
+  {
+    'command_arguments': ['-i', 'upp_1_0_25_0_03_mar_2016.csv', '-c', '-o', 'over_write_me'],
+    'metrics_md5sum': 'a376b33d6423644a5e177e790679250b',
+    'data_md5sum': '830c24ba6c70ed05d14854cfacb8628b'
+  },
+
+  {
+    'command_arguments': ['-i', 'UPP_UIT2_CT3_observation_capture.csv', '-c', '-o', 'over_write_me'],
+    'metrics_md5sum': 'f31ffdeac03178838a986b902790ac3b',
+    'data_md5sum': '421ed961ec557133d620272227d33610'
+  },
+
+  {
+    'command_arguments': ['-i', 'URE_PayloadCapture_v22.csv', '-c', '-o', 'over_write_me'],
+    'metrics_md5sum': 'f5aaa493cafaac1abf85da20420713e2',
+    'data_md5sum': '8474ef8d61b0853393547c73386844e9'
+  },
+
+  {
+    'command_arguments': ['-i', 'data14271.csv', '-c', '-o', 'over_write_me'],
+    'metrics_md5sum': '9d7ad0466f34177cccf8c53934585364',
+    'data_md5sum': 'ba5591d9bf763e549fa0feb5448b7539'
+  },
+
+  {
+    'command_arguments': ['-i', 'upp_payload_22label_2.csv', '-c', '-o', 'over_write_me'],
+    'metrics_md5sum': 'e7ec0b2adc345f45d6920dd755da51ad',
+    'data_md5sum': '7005d7c0e0cb09cc1296bd9deb8a5b9f'
+  },
+
+  {
+    'command_arguments': ['-i', 'utt_v1_0_34_0_with_2_temps.csv', '-c', '-o', 'over_write_me'],
+    'metrics_md5sum': 'd7e51df37b7b9baac4fad3dccd3a0679',
+    'data_md5sum': '3cf589b1e7423ee86517e5dce65da3b9'
+  }
+]
