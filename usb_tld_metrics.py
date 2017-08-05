@@ -393,7 +393,7 @@ def tld_data(tld_packet_series, target_parent_tag, target_child_tag):
                 if parent_end + 4 > tld_end:
                     logging.warning('Bad TLD found, skipping : %s', tld)
                     print('Bad TLD found, skipping')
-                    return
+                    break
 
                 ################################
                 # Walk down the tld and exam all parent tags...
@@ -452,6 +452,35 @@ def to_tag_values(parent, child):
     return (parent_value, child_value)
 
 
+def write_colleciton(df, tag_list, data_type, filename):
+    """
+    Find, extract and write the data from the given datafreame to a file.
+
+    :param df: the dataframe to search and extract data frome
+    :param tag_list:  the list of tuples containing column name, parent tag, child tag
+    :param data_type: the data type to convert ALL the columns to
+    :param filename: the filename to write to
+    :return: True if dataframe built and written to given file
+             False if an error occured
+    """
+    df_to_build = pd.DataFrame()  # dataframe to build
+    cols = []  # column list to build
+    # Rip through given list, find data and add to our dataframe
+    for tag in tag_list:
+        name, p, c = tag
+        data_series = to_series(df, p, c)  # get the data for this tag
+        # Add it to our frame
+        df_to_build = df_to_build.append(data_series, ignore_index=True)
+        # Build our column list
+        cols.append(name)
+
+    # Transpose frame, set column names, set correct data type and write to file
+    df_to_build = df_to_build.T
+    df_to_build.columns = cols
+    df_to_build[cols] = df_to_build[cols].astype(data_type)
+    df_to_build.to_csv(filename, index=False)
+
+
 # endregion
 
 ###############################################################################
@@ -506,9 +535,11 @@ def main(arg_list=None):
     parser.add_argument('--child', dest='child_tag_string', type=str, help='Child tag name to capture data for.',
                         required=False)
     parser.add_argument('--lead_fail_voltage', dest='leadfail_voltages', default=False, action='store_true',
-                        help='Capture lead fail voltage data', required=False)
+                        help='Capture all ECG lead fail voltage data and write to leadfail_voltages.csv', required=False)
     parser.add_argument('--ecg_waveforms', dest='ecg_waveforms', default=False, action='store_true',
-                        help='Capture lead fail voltage data', required=False)
+                        help='Capture all ECG waveform data and write to ecg_waveforms.csv', required=False)
+    parser.add_argument('--pace_metrics', dest='pace_metrics', default=False, action='store_true',
+                        help='Capture all pace metrics data and write to pace_metrics.csv', required=False)
     parser.add_argument('--version', action='version', help='Print version.',
                         version='%(prog)s Version {version}'.format(version=__version__))
 
@@ -915,45 +946,20 @@ def main(arg_list=None):
     if args.leadfail_voltages is True:
         lf_leads = [('I', 121, 13), ('II', 121, 14), ('III', 121, 15), ('V1', 121, 16), ('V2', 121, 17),
                     ('V3', 121, 18), ('V4', 121, 19), ('V5', 121, 20), ('V6', 121, 21), ('RD', 121, 22)]
-        df = pd.DataFrame() # dataframe to build
-        cols = []   # column list to build
-        for lf_lead in lf_leads:
-            name, p, c = lf_lead
-            print('Collecting lead ' + name )
-            data_series = to_series(final, p, c)
-            # Add it to our frame
-            df = df.append(data_series, ignore_index=True)
-            # Build our column list
-            cols.append(name)
-
-        # Transpose frame, set correct data type and write to file
-        df = df.T
-        df.columns = cols
-        df[cols] = df[cols].astype('int16')
-        df.to_csv("leadfail_voltages.csv", index=False)
+        write_colleciton(final, lf_leads, 'int16', 'leadfail_voltages.csv')
 
     ###############################################################################
     # Should we collect ECG waveform voltages?
     if args.ecg_waveforms is True:
-        lf_leads = [('I', 121, 1), ('II', 121, 2), ('III', 121, 3), ('V1', 121, 4), ('V2', 121, 5),
-                    ('V3', 121, 6), ('V4', 121, 7), ('V5', 121, 8), ('V6', 121, 9)]
-        df = pd.DataFrame() # dataframe to build
-        cols = []   # column list to build
-        for lf_lead in lf_leads:
-            name, p, c = lf_lead
-            print('Collecting lead ' + name )
-            data_series = to_series(final, p, c)
-            # Add it to our frame
-            df = df.append(data_series, ignore_index=True)
-            # Build our column list
-            cols.append(name)
+        waveforms = [('I', 121, 1), ('II', 121, 2), ('III', 121, 3), ('V1', 121, 4), ('V2', 121, 5),
+                     ('V3', 121, 6), ('V4', 121, 7), ('V5', 121, 8), ('V6', 121, 9)]
+        write_colleciton(final, waveforms, 'int16', 'ecg_waveforms.csv')
 
-        # Transpose frame, set correct data type and write to file
-        df = df.T
-        df.columns = cols
-        df[cols] = df[cols].astype('int16')
-        df.to_csv("ecg_waveforms.csv", index=False)
-
+    ###############################################################################
+    # Should we collect PACE metrics?
+    if args.pace_metrics is True:
+        pace_metrics = [('X', 163, 1), ('Y', 163, 2), ('Z', 163, 3), ('Width', 163, 4)]
+        write_colleciton(final, pace_metrics, 'int16', 'pace_metrics.csv')
 
     print('--- DONE ---')
     return 0
