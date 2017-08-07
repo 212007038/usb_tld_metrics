@@ -145,7 +145,7 @@ def tld_to_string(row):
 
     We also tally 2 additional metrics:
         The number of times a particular child tag occurred.
-        The total payload side for a particual child tag.
+        The total payload side for a particular child tag.
 
     Args:
         row (): A DataFrame row
@@ -481,6 +481,28 @@ def write_colleciton(df, tag_list, data_type, filename):
     df_to_build.to_csv(filename, index=False)
 
 
+def read_yaml(yaml_filename):
+    """
+    Read in the given yaml file and return the structure
+
+    :param yaml_filename: the filename of the yaml file to read
+    :return: A configuration dictionary the caller understands.
+    """
+    config = None
+    try:
+        config = yaml.safe_load(open(yaml_filename))
+    except IOError as e:
+        print("Can't read " + args.yaml_config)
+        print("I/O error({0}): {1}".format(e.errno, e.strerror))
+        logging.warning('Exceptions reading YAML file %s', yaml_filename, exc_info=True)
+    except:
+        print('Problem parsing YAML test configuration file ' + yaml_filename + ', syntax issue?')
+        logging.warning('Exceptions reading YAML file %s', yaml_filename, exc_info=True)
+
+    return config
+
+
+
 # endregion
 
 ###############################################################################
@@ -494,12 +516,12 @@ def main(arg_list=None):
     """
     ##############
     # Initialize some variables
-    g_parent_tag = None
-    g_child_tag = None
     g_metrics_series = pd.Series(index=g_metric_columns)
     g_metrics_df = pd.DataFrame(columns=g_metric_columns)
     g_children_found.clear()
     g_child_payload_tally.clear()
+    G_COLLECTION_FILENAME = 'collect.yaml'
+    G_COLLECTION_CONFIG = None
 
     ###############################################################################
     # region Command line region
@@ -518,8 +540,6 @@ def main(arg_list=None):
                         help='3 letter extention of optional graphics file for histogram charts', required=False)
     parser.add_argument('-d', dest='graphics_dir',
                         help='optional directroy where graphics files will be written', required=False)
-    parser.add_argument('-v', dest='verbose', default=False, action='store_true',
-                        help='verbose output flag', required=False)
     parser.add_argument('-y', dest='yaml_config', default='sample_drift_config.yaml',
                         help='File for sample drift test configuration, defaults to sample_drift_config.yaml',
                         required=False)
@@ -530,16 +550,10 @@ def main(arg_list=None):
                         help='logging level for log file')
     parser.add_argument('-t', dest='start_time_seconds', default=0.0, type=float, required=False,
                         help='seconds into collection to start analysis, defaults to 0.0')
-    parser.add_argument('--parent', dest='parent_tag_string', type=str, help='Parent tag name to capture data for.',
-                        required=False)
-    parser.add_argument('--child', dest='child_tag_string', type=str, help='Child tag name to capture data for.',
-                        required=False)
-    parser.add_argument('--lead_fail_voltage', dest='leadfail_voltages', default=False, action='store_true',
-                        help='Capture all ECG lead fail voltage data and write to leadfail_voltages.csv', required=False)
-    parser.add_argument('--ecg_waveforms', dest='ecg_waveforms', default=False, action='store_true',
-                        help='Capture all ECG waveform data and write to ecg_waveforms.csv', required=False)
-    parser.add_argument('--pace_metrics', dest='pace_metrics', default=False, action='store_true',
-                        help='Capture all pace metrics data and write to pace_metrics.csv', required=False)
+    parser.add_argument('--collect', dest='collect',
+                        help='collect given data', required=False)
+    parser.add_argument('-v', dest='verbose', default=False, action='store_true',
+                        help='verbose output flag', required=False)
     parser.add_argument('--version', action='version', help='Print version.',
                         version='%(prog)s Version {version}'.format(version=__version__))
 
@@ -563,17 +577,26 @@ def main(arg_list=None):
 
     ###############################################################################
     # Attempt to load the YAML test config file.
-    try:
-        sample_drift_config = yaml.safe_load(open(args.yaml_config))
-    except IOError as e:
-        print("Can't read " + args.yaml_config + ', this is a required sample drift configuration file.')
-        print("I/O error({0}): {1}".format(e.errno, e.strerror))
-        logging.warning('Exceptions reading YAML file %s', args.yaml_config, exc_info=True)
+    sample_drift_config = read_yaml(args.yaml_config)
+    if sample_drift_config is None:
+        print("Error reading YAML file " + args.yaml_config )
         return -1
-    except:
-        print('Problem parsing YAML test configuration file ' + args.yaml_config + ', syntax issue?')
-        logging.warning('Exceptions reading YAML file %s', args.yaml_config, exc_info=True)
-        return -1
+
+    ###############################################################################
+    # Does the user want to collect data?
+    if args.collect is not None:
+        ###############################################################################
+        # Attempt to read yaml collection dictionary.
+        G_COLLECTION_CONFIG = read_yaml(G_COLLECTION_FILENAME)
+        if G_COLLECTION_CONFIG is None:
+            print("Error reading YAML file " + args.collect)
+            return -1
+        # Does the users collection tag exist?
+        if args.collect not in G_COLLECTION_CONFIG:
+            print(args.collect + ' not found in collection dictionary')
+            return -1
+
+
 
     ###############################################################################
     # Test for existence of the LeCroy file.
@@ -612,19 +635,6 @@ def main(arg_list=None):
     if args.csv_output_file is None:
         # A output file name was not given, so build one
         args.csv_output_file = os.path.splitext(os.path.basename(args.csv_input_file))[0] + '_metrics.csv'
-
-    ###############################################################################
-    # Did the user spec any parent/child tag data to collect?
-    if args.parent_tag_string is not None and args.child_tag_string is not None:
-        # Are these tags values in our dictionary?
-        value_tag = to_tag_values(args.parent_tag_string, args.child_tag_string)
-        if value_tag is not None:
-            (g_parent_tag, g_child_tag) = value_tag
-        else:
-            print("Error processing parent/child tag from command line")
-            logging.warning('Error processing parent/child tag from command line: %s %s',
-                            args.parent_tag_string, args.child_tag_string, exc_info=True)
-            return -1
 
     # endregion
 
@@ -931,35 +941,11 @@ def main(arg_list=None):
 
     ###############################################################################
     # Do we have child data to find and log?
-    if g_parent_tag is not None and g_child_tag is not None:
-        print("Logging data for " + args.parent_tag_string + "----" + args.child_tag_string)
-        data_series = to_series(final, g_parent_tag, g_child_tag)
-        print(str(data_series.size) + ' hits for ' + args.parent_tag_string + "----" + args.child_tag_string)
-        # Construct filename to use to store child data
-        csv_filename = os.path.splitext(os.path.basename(args.csv_input_file))[
-                           0] + '_' + args.parent_tag_string + '_' + args.child_tag_string + '_data.csv'
-        print('Writing child data to ' + csv_filename + '...')
-        data_series.to_csv(csv_filename, index=False)
+    if args.collect is not None and G_COLLECTION_CONFIG is not None:
+        # Looks we gotsa collection to log.
+        collection_config = G_COLLECTION_CONFIG[args.collect]
+        write_colleciton(final, collection_config['tags'], collection_config['datatype'], args.collect + '.csv')
 
-    ###############################################################################
-    # Should we collect lead fail voltages?
-    if args.leadfail_voltages is True:
-        lf_leads = [('I', 121, 13), ('II', 121, 14), ('III', 121, 15), ('V1', 121, 16), ('V2', 121, 17),
-                    ('V3', 121, 18), ('V4', 121, 19), ('V5', 121, 20), ('V6', 121, 21), ('RD', 121, 22)]
-        write_colleciton(final, lf_leads, 'int16', 'leadfail_voltages.csv')
-
-    ###############################################################################
-    # Should we collect ECG waveform voltages?
-    if args.ecg_waveforms is True:
-        waveforms = [('I', 121, 1), ('II', 121, 2), ('III', 121, 3), ('V1', 121, 4), ('V2', 121, 5),
-                     ('V3', 121, 6), ('V4', 121, 7), ('V5', 121, 8), ('V6', 121, 9)]
-        write_colleciton(final, waveforms, 'int16', 'ecg_waveforms.csv')
-
-    ###############################################################################
-    # Should we collect PACE metrics?
-    if args.pace_metrics is True:
-        pace_metrics = [('X', 163, 1), ('Y', 163, 2), ('Z', 163, 3), ('Width', 163, 4)]
-        write_colleciton(final, pace_metrics, 'int16', 'pace_metrics.csv')
 
     print('--- DONE ---')
     return 0
