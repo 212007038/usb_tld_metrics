@@ -454,14 +454,14 @@ def to_tag_values(parent, child):
 
 def write_colleciton(df, tag_list, data_type, filename):
     """
-    Find, extract and write the data from the given datafreame to a file.
+    Find, extract and write the data from the given dataframe to a file.
 
-    :param df: the dataframe to search and extract data frome
+    :param df: the dataframe to search and extract data from
     :param tag_list:  the list of tuples containing column name, parent tag, child tag
     :param data_type: the data type to convert ALL the columns to
     :param filename: the filename to write to
     :return: True if dataframe built and written to given file
-             False if an error occured
+             False if an error occurred
     """
     df_to_build = pd.DataFrame()  # dataframe to build
     cols = []  # column list to build
@@ -500,8 +500,6 @@ def read_yaml(yaml_filename):
         logging.warning('Exceptions reading YAML file %s', yaml_filename, exc_info=True)
 
     return config
-
-
 
 # endregion
 
@@ -684,14 +682,11 @@ def main(arg_list=None):
     df.dropna(subset=['Data', 'Addr,Endp,Dir'], inplace=True)
 
     # Split this goofy column into 3 columns
-    start_time = timeit.default_timer()
     print('Splitting Addr,Endp,Dir column...')
     df['Addr'] = df['Addr,Endp,Dir'].str.split(',').str[0]
     df['Endp'] = df['Addr,Endp,Dir'].str.split(',').str[1]
     df['Dir'] = df['Addr,Endp,Dir'].str.split(',').str[2].str.strip()
     df.drop(['Addr,Endp,Dir'], axis='columns', inplace=True)  # drop it, don't need it no more
-    elapsed = timeit.default_timer() - start_time
-    print("elapsed time ".format(elapsed,inspect.currentframe()))
 
     if args.verbose is True:
         print(df.info())  # optionally print metrics
@@ -942,10 +937,10 @@ def main(arg_list=None):
     ###############################################################################
     # Do we have child data to find and log?
     if args.collect is not None and G_COLLECTION_CONFIG is not None:
-        # Looks we gotsa collection to log.
+        print('Extracting ' + args.collect + ' metrics and writing to file')
+        # Looks like we gotsa collection to log.
         collection_config = G_COLLECTION_CONFIG[args.collect]
         write_colleciton(final, collection_config['tags'], collection_config['datatype'], args.collect + '.csv')
-
 
     print('--- DONE ---')
     return 0
