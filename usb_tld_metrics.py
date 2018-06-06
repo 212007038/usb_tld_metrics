@@ -305,7 +305,7 @@ def to_series(df, parent_tag, child_tag):
     parent_string = tags.ParentTag_Dict[parent_tag]
     child_string = (tags.ChildTag_Dict[parent_tag])[child_tag]
 
-    found = df[df['tags'].str.contains(parent_string + ':.:.*' + child_string)]
+    found = df[df['tags'].str.contains(parent_string + ':1:.*' + child_string)]
     data_series = tld_data(found['Data'], parent_tag, child_tag)
     return data_series
 
