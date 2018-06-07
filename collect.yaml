@@ -31,7 +31,9 @@
       ['V3', 121, 6],
       ['V4', 121, 7],
       ['V5', 121, 8],
-      ['V6', 121, 9]
+      ['V6', 121, 9],
+      ['AO_LEAD', 122, 1],
+      ['QRS_PACE_MARKER', 121, 33],
     ]
   },
 
@@ -45,6 +47,47 @@
       ['Z', 163, 3],
       ['PACE_WIDTH', 163, 4]
     ]
-  }
+  },
 
+  GENERAL_STATUS:
+  {
+    'datatype': 'uint16',
+    'tags':
+    [
+      ['LINE_FREQUENCY_FILTER_SELECT_STATUS', 121, 40],
+      ['INTERPOLATION_ON_OFF_STATUS', 121, 42],
+      ['PACE_ON_OFF_STATUS', 121, 44],
+      ['PACE_VECTORS_STATUS', 121, 46],
+      ['PACE_VECTORS_VALID_STATUS', 121, 48],
+      ['REFERENCE_ELECTRODE_STATUS', 121, 50],
+    ]
+  },
+
+  LEADFAIL_STATUS:
+  {
+    'datatype': 'uint16',
+    'tags':
+    [
+      ['DC_LEADFAIL_STATUS_LEADS', 121, 56],
+      ['DC_LEADFAIL_STATUS_ELECTRODES', 121, 57]
+    ]
+  },
+  
+  MARKERS:
+  {
+    'datatype': 'uint16',
+    'tags':
+    [
+      ['QRS_PACE_MARKER', 121, 33],
+    ]
+  },
+  
+  AO_WF_VOLTAGES:
+  {
+    'datatype': 'int16',
+    'tags':
+    [
+      ['LEAD', 122, 1],
+    ]
+  },
 }
