@@ -310,6 +310,74 @@ def to_series(df, parent_tag, child_tag):
     return data_series
 
 
+def to_comms_data(df):
+    """
+    Take the given dataframe and pattern and find the data and return a series.
+    NOTE: This is extremely dependent on tld order by the U-RE.  Assumption are made
+    on the possition of waveform data.
+
+
+    Args:
+        df(): The dataframe to search.
+        parent_tag: the parent tag to find
+        child_tag: the parent tag to find
+
+    Returns:
+        a series containing the discovered data
+
+    """
+    # Find end point 1, direction in, device is ure.
+    # This is all the URE DSP outbound data.
+    found = df[(df.Endp == 1) & (df.Dir == 'IN') & (df.Device == 'ACTIVE_CABLE_ECG_DSP')]
+
+    # Iterate through all the data and collect...
+    # There will be one COMMS_DATA structure created for each TLD packet sent.
+    for tld in found.Data:
+        tld_offset = 0
+        tld_end = len(tld)  # end of this string
+
+        COMMS_DATA = {
+            'buffer_sps_500': np.zeros((9, 5), dtype=np.int16),
+            'buffer_sps_500_ao': np.zeros((5,), dtype=np.int16),
+            'pace_markers': 0,
+            'paceInfo': [np.zeros((3,), dtype=np.int16), 0],
+            'ecgCount': 0
+        }
+
+        # Is this a 4 or 5 ecg sample tld?
+        COMMS_DATA['ecgCount'] = int(tld[32:36], 16)
+        COMMS_DATA['buffer_sps_500_ao'] = np.array([int(tld[i:i + 4], 16) for i in range(36, 56, 4)], dtype=np.int16)  # AO
+
+        # Are we 4?
+        if COMMS_DATA['ecgCount'] == 4:
+            # Build our COMMS_DATA dictionary base on 4 samples
+            COMMS_DATA['buffer_sps_500'][0] = np.array([int(tld[i:i + 4], 16) for i in range(80, 100, 4)], dtype=np.int16)    # I
+            COMMS_DATA['buffer_sps_500'][1] = np.array([int(tld[i:i + 4], 16) for i in range(104, 124, 4)], dtype=np.int16)   # II
+            COMMS_DATA['buffer_sps_500'][2] = np.array([int(tld[i:i + 4], 16) for i in range(128, 148, 4)], dtype=np.int16)   # III
+            COMMS_DATA['buffer_sps_500'][3] = np.array([int(tld[i:i + 4], 16) for i in range(152, 172, 4)], dtype=np.int16)   # V1
+            COMMS_DATA['buffer_sps_500'][4] = np.array([int(tld[i:i + 4], 16) for i in range(176, 196, 4)], dtype=np.int16)   # V2
+            COMMS_DATA['buffer_sps_500'][5] = np.array([int(tld[i:i + 4], 16) for i in range(200, 220, 4)], dtype=np.int16)   # V3
+            COMMS_DATA['buffer_sps_500'][6] = np.array([int(tld[i:i + 4], 16) for i in range(224, 244, 4)], dtype=np.int16)   # V4
+            COMMS_DATA['buffer_sps_500'][7] = np.array([int(tld[i:i + 4], 16) for i in range(248, 268, 4)], dtype=np.int16)   # V5
+            COMMS_DATA['buffer_sps_500'][8] = np.array([int(tld[i:i + 4], 16) for i in range(272, 292, 4)], dtype=np.int16)   # V6
+            COMMS_DATA['pace_markers'] = int(tld[60:64], 16)
+        # gotta be 5...
+        else:
+            # Build our COMMS_DATA dictionary base on 5 samples
+            COMMS_DATA['buffer_sps_500'][0] = np.array([int(tld[i:i + 4], 16) for i in range(84, 104, 4)], dtype=np.int16)    # I
+            COMMS_DATA['buffer_sps_500'][1] = np.array([int(tld[i:i + 4], 16) for i in range(112, 132, 4)], dtype=np.int16)   # II
+            COMMS_DATA['buffer_sps_500'][2] = np.array([int(tld[i:i + 4], 16) for i in range(140, 160, 4)], dtype=np.int16)   # III
+            COMMS_DATA['buffer_sps_500'][3] = np.array([int(tld[i:i + 4], 16) for i in range(168, 188, 4)], dtype=np.int16)   # V1
+            COMMS_DATA['buffer_sps_500'][4] = np.array([int(tld[i:i + 4], 16) for i in range(196, 216, 4)], dtype=np.int16)   # V2
+            COMMS_DATA['buffer_sps_500'][5] = np.array([int(tld[i:i + 4], 16) for i in range(224, 244, 4)], dtype=np.int16)   # V3
+            COMMS_DATA['buffer_sps_500'][6] = np.array([int(tld[i:i + 4], 16) for i in range(252, 272, 4)], dtype=np.int16)   # V4
+            COMMS_DATA['buffer_sps_500'][7] = np.array([int(tld[i:i + 4], 16) for i in range(280, 300, 4)], dtype=np.int16)   # V5
+            COMMS_DATA['buffer_sps_500'][8] = np.array([int(tld[i:i + 4], 16) for i in range(308, 328, 4)], dtype=np.int16)   # V6
+            COMMS_DATA['pace_markers'] = int(tld[64:68], 16)
+
+    return found
+
+
 ###############################################################################
 # Calculate the time differences between ALL the surface temperature requests
 # and the reponses.  We return a series of deltas.
