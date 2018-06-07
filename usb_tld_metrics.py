@@ -314,7 +314,7 @@ def to_comms_data(df):
     """
     Take the given dataframe and pattern and find the data and return a series.
     NOTE: This is extremely dependent on tld order by the U-RE.  Assumption are made
-    on the possition of waveform data.
+    on the position of waveform data.
 
 
     Args:
@@ -323,7 +323,7 @@ def to_comms_data(df):
         child_tag: the parent tag to find
 
     Returns:
-        a series containing the discovered data
+        a series containing of COMMS_DATA dictionaries
 
     """
     # Find end point 1, direction in, device is ure.
@@ -332,11 +332,13 @@ def to_comms_data(df):
 
     # Iterate through all the data and collect...
     # There will be one COMMS_DATA structure created for each TLD packet sent.
+    cd = []
     for tld in found.Data:
         tld_offset = 0
         tld_end = len(tld)  # end of this string
 
-        COMMS_DATA = {
+        COMMS_DATA = \
+        {
             'buffer_sps_500': np.zeros((9, 5), dtype=np.int16),
             'buffer_sps_500_ao': np.zeros((5,), dtype=np.int16),
             'pace_markers': 0,
@@ -344,7 +346,7 @@ def to_comms_data(df):
             'ecgCount': 0
         }
 
-        # Is this a 4 or 5 ecg sample tld?
+        # First thing to do is to capture the number ECG samples in this TLD.
         COMMS_DATA['ecgCount'] = int(tld[32:36], 16)
         COMMS_DATA['buffer_sps_500_ao'] = np.array([int(tld[i:i + 4], 16) for i in range(36, 56, 4)], dtype=np.int16)  # AO
 
@@ -375,7 +377,10 @@ def to_comms_data(df):
             COMMS_DATA['buffer_sps_500'][8] = np.array([int(tld[i:i + 4], 16) for i in range(308, 328, 4)], dtype=np.int16)   # V6
             COMMS_DATA['pace_markers'] = int(tld[64:68], 16)
 
-    return found
+        # Add to bottom of list...
+        cd.append(COMMS_DATA)
+
+    return pd.Series(cd)
 
 
 ###############################################################################
@@ -1009,6 +1014,31 @@ def main(arg_list=None):
         # Looks like we gotsa collection to log.
         collection_config = G_COLLECTION_CONFIG[args.collect]
         write_colleciton(final, collection_config['tags'], collection_config['datatype'], args.collect + '.csv')
+
+    ###############################################################################
+    # Did the user want a COMMS_DATA output?
+    pd_series = to_comms_data(final)
+
+    # Iterate through all the dictionaries...
+    for d in pd_series:
+        print('// leads i-v6')
+        for x in np.nditer(d['buffer_sps_500']):
+            print('{}, '.format(x), end='')
+        print('')
+
+        for x in np.nditer(d['buffer_sps_500_ao']):
+            print('{}, '.format(x), end='')
+        print('// AO lead')
+
+        print('0x{:04x}, // pace_markers'.format(d['pace_markers']))
+
+        for x in np.nditer(d['paceInfo'][0]):
+            print('{}, '.format(x), end='')
+        print('{}, // paceInfo'.format(d['paceInfo'][1]))
+
+        print('{:d},     // ecgCount'.format(d['ecgCount']))
+        print('')
+
 
     print('--- DONE ---')
     return 0
