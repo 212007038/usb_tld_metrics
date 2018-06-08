@@ -1021,22 +1021,25 @@ def main(arg_list=None):
 
     # Iterate through all the dictionaries...
     for d in pd_series:
-        print('// leads i-v6')
+        print('// buffer_sps_500')
+        print('{ ', end='')
         for x in np.nditer(d['buffer_sps_500']):
             print('{}, '.format(x), end='')
-        print('')
+        print('},')
 
+        print('{ ', end='')
         for x in np.nditer(d['buffer_sps_500_ao']):
             print('{}, '.format(x), end='')
-        print('// AO lead')
+        print('}, // buffer_sps_500_ao')
 
-        print('0x{:04x}, // pace_markers'.format(d['pace_markers']))
+        print('{{ 0x{:04x} }},             // pace_markers'.format(d['pace_markers']))
 
+        print('{ ', end='')
         for x in np.nditer(d['paceInfo'][0]):
             print('{}, '.format(x), end='')
-        print('{}, // paceInfo'.format(d['paceInfo'][1]))
+        print('{} }},         // paceInfo'.format(d['paceInfo'][1]))
 
-        print('{:d},     // ecgCount'.format(d['ecgCount']))
+        print('{{ {:d} }},                  // ecgCount'.format(d['ecgCount']))
         print('')
 
 
