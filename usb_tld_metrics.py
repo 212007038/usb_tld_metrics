@@ -337,8 +337,10 @@ def to_comms_data(df):
         tld_offset = 0
         tld_end = len(tld)  # end of this string
 
+        # There will be ones COMMS_DATA per TLD...
         COMMS_DATA = \
         {
+            'tld_seq': 0,
             'buffer_sps_500': np.zeros((9, 5), dtype=np.int16),
             'buffer_sps_500_ao': np.zeros((5,), dtype=np.int16),
             'pace_markers': 0,
@@ -349,6 +351,9 @@ def to_comms_data(df):
         # First thing to do is to capture the number ECG samples in this TLD.
         COMMS_DATA['ecgCount'] = int(tld[32:36], 16)
         COMMS_DATA['buffer_sps_500_ao'] = np.array([int(tld[i:i + 4], 16) for i in range(36, 56, 4)], dtype=np.int16)  # AO
+
+        # Capture the TLD sequence number.
+        COMMS_DATA['tld_seq'] = to_sequence(tld)
 
         # Are we 4?
         if COMMS_DATA['ecgCount'] == 4:
@@ -522,7 +527,7 @@ def to_tag_values(parent, child):
         logging.warning('could not find given child tag in tag dictionary: %s', child, exc_info=True)
         return None
 
-    return (parent_value, child_value)
+    return parent_value, child_value
 
 
 def write_colleciton(df, tag_list, data_type, filename):
@@ -574,6 +579,56 @@ def read_yaml(yaml_filename):
 
     return config
 
+
+def write_comms_data(final, filename):
+    """
+    Collect and write COMMS_DATA from given dataframe to given filename.
+    :param final: the dataframe containing the TLDs collection from a URE.  Assumed to be URE.  If not, not data will
+    be written.
+    :param filename:  The filename to write the C array to.
+    :return:
+    """
+
+    # Attempt to collect COMMS_DATA from this dataframe.
+    pd_series = to_comms_data(final)
+    # Did we get any?
+    if len(pd_series) is 0:
+        return False
+    # and write to file.
+    with open(filename, 'w') as f:
+        # Write array declaration...
+        f.write('COMMS_DATA g_comms_data_capture[] = \n')
+        f.write('{\n')
+
+        # Iterate through all the collect DATA_COMMS structures...
+        for d in pd_series:
+            f.write('// tld sequence {:d}\n'.format(d['tld_seq']))
+
+            f.write('{\n')
+            f.write('// buffer_sps_500\n')
+            for x in np.nditer(d['buffer_sps_500']):
+                f.write('{}, '.format(x))
+            f.write('\n')
+
+            for x in np.nditer(d['buffer_sps_500_ao']):
+                f.write('{}, '.format(x))
+            f.write(' // buffer_sps_500_ao\n')
+
+            f.write('0x{:04x},             // pace_markers\n'.format(d['pace_markers']))
+
+            for x in np.nditer(d['paceInfo'][0]):
+                f.write('{}, '.format(x))
+            f.write('{},         // paceInfo\n'.format(d['paceInfo'][1]))
+
+            f.write('{:d}                   // ecgCount\n'.format(d['ecgCount']))
+            f.write('},\n\n')
+
+        # Complete declaration.
+        f.write('};\n')
+
+    return True
+
+
 # endregion
 
 ###############################################################################
@@ -623,6 +678,9 @@ def main(arg_list=None):
                         help='seconds into collection to start analysis, defaults to 0.0')
     parser.add_argument('--collect', dest='collect',
                         help='collect given data', required=False)
+    parser.add_argument('--comms_data', dest='comms_data', default=False, action='store_true',
+                        help='flag to create optional C array output containing an array of COMMS_DATA types',
+                        required=False)
     parser.add_argument('-v', dest='verbose', default=False, action='store_true',
                         help='verbose output flag', required=False)
     parser.add_argument('--version', action='version', help='Print version.',
@@ -666,8 +724,6 @@ def main(arg_list=None):
         if args.collect not in G_COLLECTION_CONFIG:
             print(args.collect + ' not found in collection dictionary')
             return -1
-
-
 
     ###############################################################################
     # Test for existence of the LeCroy file.
@@ -1017,31 +1073,12 @@ def main(arg_list=None):
 
     ###############################################################################
     # Did the user want a COMMS_DATA output?
-    pd_series = to_comms_data(final)
-
-    # Iterate through all the dictionaries...
-    for d in pd_series:
-        print('// buffer_sps_500')
-        print('{ ', end='')
-        for x in np.nditer(d['buffer_sps_500']):
-            print('{}, '.format(x), end='')
-        print('},')
-
-        print('{ ', end='')
-        for x in np.nditer(d['buffer_sps_500_ao']):
-            print('{}, '.format(x), end='')
-        print('}, // buffer_sps_500_ao')
-
-        print('{{ 0x{:04x} }},             // pace_markers'.format(d['pace_markers']))
-
-        print('{ ', end='')
-        for x in np.nditer(d['paceInfo'][0]):
-            print('{}, '.format(x), end='')
-        print('{} }},         // paceInfo'.format(d['paceInfo'][1]))
-
-        print('{{ {:d} }},                  // ecgCount'.format(d['ecgCount']))
-        print('')
-
+    if args.comms_data is True:
+        # Construct filename...
+        c_filename = os.path.splitext(args.csv_output_file)[0] + '_array.c'
+        print('Writing COMMS_DATA C array to ' + c_filename)
+        if write_comms_data(final, c_filename) is False:
+            print_console_and_log('Failure writing COMMS_DATAQ C array to ' + c_filename)
 
     print('--- DONE ---')
     return 0
