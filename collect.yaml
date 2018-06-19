@@ -47,6 +47,15 @@
     ]
   },
 
+  RESP_WAVEFORM:
+  {
+    'datatype': 'int16',
+    'tags':
+    [
+      ['RESP_WF', 123, 1]
+    ]
+  },
+
   GENERAL_STATUS:
   {
     'datatype': 'uint16',
