@@ -55,7 +55,31 @@ g_metric_columns = ['Parent Tag', 'Child Tag', 'Endp', 'Dir', 'Child Tag Count',
 
 
 # These particular columns will be changed to an unsigned integer data type
-g_metrics_df_int_value_list = ['Endp', 'Child Tag Count', 'Child Length Total', 'Sample Drift Samples Collected']
+g_metrics_df_int_value_list = [
+    'Endp',
+    'Child Tag Count',
+    'Child Length Total',
+    'Sample Drift Expected seconds',
+    'Sample Drift Samples Collected'
+]
+
+# These particular columns will be changed to float
+g_metrics_df_float_value_list = [
+    'Mean (mS)',
+    'Median (mS)',
+    'Max (mS)',
+    'Min (mS)',
+    'Std',
+    'Mean Child SPS',
+    'Max Child SPS',
+    'Min Child SPS',
+    'Sample Drift Measured MAX Sec',
+    'Sample Drift Measured MAX ppm',
+    'Sample Drift Measured MIN Sec',
+    'Sample Drift Measured MIN ppm',
+    'Sample Drift Measured MEAN',
+    'Sample Drift Measured STD',
+]
 
 # Filler for cells that were not calculated
 G_NOT_APPLICABLE = 0
@@ -66,6 +90,8 @@ G_NOT_ENOUGH_SAMPLES = 0
 ###############################################################################
 # region Function region
 ###############################################################################
+
+
 def to_device(tld_hex_string):
     """Return the device name of the given TLD.
 
@@ -1047,9 +1073,10 @@ def main(arg_list=None):
     # Write the metrics file.
     print('Writing metrics to ' + args.csv_output_file + '...')
     g_metrics_df[g_metrics_df_int_value_list] = g_metrics_df[g_metrics_df_int_value_list].astype('uint64')
+    g_metrics_df[g_metrics_df_float_value_list] = g_metrics_df[g_metrics_df_float_value_list].astype('float64')
     # Ok, let's sort and write to CSV file.
-    g_metrics_df.sort_values(by=['Child Tag', 'Parent Tag', 'Dir', 'Child Tag Count'],
-                             ascending=[True, True, True, False],
+    g_metrics_df.sort_values(by=['Child Tag', 'Parent Tag', 'Dir', 'Child Tag Count', 'Endp'],
+                             ascending=[True, True, True, False, False],
                              inplace=True)
 
     g_metrics_df.to_csv(args.csv_output_file, index=False, float_format='%.{0}f'.format(args.precision))
@@ -1061,7 +1088,7 @@ def main(arg_list=None):
         # Note the data file is written to the same directory as the output file.
         csv_data_filename = os.path.splitext(args.csv_output_file)[0] + '_data.csv'
         print('Writing dataframe to ' + csv_data_filename + '...')
-        final.to_csv(csv_data_filename, index=False)
+        final.to_csv(csv_data_filename, index=False, float_format='%.9f')
 
     ###############################################################################
     # Do we have child data to find and log?
