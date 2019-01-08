@@ -85,6 +85,13 @@ g_metrics_df_float_value_list = [
 G_NOT_APPLICABLE = 0
 G_NOT_ENOUGH_SAMPLES = 0
 
+
+# Marker flag defines
+QRS_COMPLEX_DETECTED_MASK = 0x8000
+QRS_SAMPLE_INDEX_MASK = 0x0700
+QRS_SAMPLE_INDEX_SHIFT = 8
+QRS_MARKER_OFFSET = 500
+
 # endregion
 
 ###############################################################################
@@ -316,13 +323,14 @@ def print_console_and_log(message):
     logging.info(message)
 
 
-def to_series(df, parent_tag, child_tag):
+def to_series(df, parent_tag, child_tag, prepend_child_count=False):
     """Take the given dataframe and pattern and find the data and return a series
 
     Args:
         df(): The dataframe to search.
         parent_tag: the parent tag to find
         child_tag: the parent tag to find
+        prepend_child_count: boolean to pre-pend child count
 
     Returns:
         a series containing the discovered data
@@ -332,7 +340,7 @@ def to_series(df, parent_tag, child_tag):
     child_string = (tags.ChildTag_Dict[parent_tag])[child_tag]
 
     found = df[df['tags'].str.contains(parent_string + ':1:.*' + child_string)]
-    data_series = tld_data(found['Data'], parent_tag, child_tag)
+    data_series = tld_data(found['Data'], parent_tag, child_tag, prepend_child_count)
     return data_series
 
 
@@ -464,7 +472,7 @@ def get_temp_delta(df):
         return None
 
 
-def tld_data(tld_packet_series, target_parent_tag, target_child_tag):
+def tld_data(tld_packet_series, target_parent_tag, target_child_tag, prepend_child_count=False):
     """Given a TLD collection in the given pandas DataFrame, find and extract
        all the child data from the given parent/child tag.
 
@@ -475,6 +483,7 @@ def tld_data(tld_packet_series, target_parent_tag, target_child_tag):
         tld_packet_series (): A pandas series containing the TLD in hex string format.
         target_parent_tag (): The decimal value of the parent tag of the data to find.
         target_child_tag ():  The decimal value of the child tag of the data to find.
+        prepend_child_count (): Boolean value to indicate if child count is needed in front of child data.
 
     Returns:
         A series containing the decimal series of the data extracted from the parent/child tag.
@@ -519,6 +528,12 @@ def tld_data(tld_packet_series, target_parent_tag, target_child_tag):
                             # Loop here, grab the child data and tack to end of series...
                             child_length = int(tld[child_offset + 4:child_offset + 8], 16)
                             data_offset = child_offset + 8
+
+                            # Should we pre-pend the child data count to child data?
+                            if prepend_child_count is True:
+                                data_list.append(child_length)   # add to array...
+
+                            # Append child data to array.
                             data_list += [int(tld[i:i + 4], 16) for i in
                                           range(data_offset, data_offset + (child_length * 4), 4)]
 
@@ -1093,10 +1108,54 @@ def main(arg_list=None):
     ###############################################################################
     # Do we have child data to find and log?
     if args.collect is not None and G_COLLECTION_CONFIG is not None:
-        print('Extracting ' + args.collect + ' metrics and writing to file')
-        # Looks like we gotsa collection to log.
-        collection_config = G_COLLECTION_CONFIG[args.collect]
-        write_colleciton(final, collection_config['tags'], collection_config['datatype'], args.collect + '.csv')
+        if args.collect != 'ANALOG_OUTPUT':
+            print('Extracting ' + args.collect + ' metrics and writing to file')
+            # Looks like we gotsa collection to log.
+            collection_config = G_COLLECTION_CONFIG[args.collect]
+            write_colleciton(final, collection_config['tags'], collection_config['datatype'], args.collect + '.csv')
+        else:
+            '''
+            Debug
+            test_ao_wf_series = to_series(final, 122, 1)   # get a test version to determine sample count
+            '''
+            ao_wf_series = to_series(final, 122, 1, True)     # get the analog output waveform as a series with counts
+            ao_wf_series = ao_wf_series.astype(dtype='int16')   # set the correct data type.
+            ao_marker_series = to_series(final, 122, 2)         # get the analog output markers as a series
+
+            # Process the series...
+            ao_wf_series_index = 0
+            series_to_build = pd.Series(dtype='int16')   # series to build
+            for index, marker_flag in ao_marker_series.iteritems():
+                data_length = ao_wf_series.iloc[ao_wf_series_index]
+                assert data_length == 4 or data_length == 5     # must be 4 or 5
+                # QRS and PACE are indicated in the marker flag.  Zero mean neither are present in this sample set.
+                if marker_flag & QRS_COMPLEX_DETECTED_MASK is not 0:
+                    # We have a QRS detected within the sample set.
+                    # Get the sample number on which it occurred.
+                    qrs_sample_index = (marker_flag & QRS_SAMPLE_INDEX_MASK) >> QRS_SAMPLE_INDEX_SHIFT
+
+                    # Adjust index if needed.  This is due to current implementation of URE2's beat detector...
+                    if qrs_sample_index == 4 and data_length == 4:
+                        qrs_sample_index = 3
+
+                    assert qrs_sample_index <= 4    # sanity check value
+                    ao_wf_series.iloc[ao_wf_series_index+1+qrs_sample_index] += QRS_MARKER_OFFSET   # and mark
+
+                # Copy over wf samples to series we are building...
+                series_to_build = \
+                    series_to_build.append(ao_wf_series[ao_wf_series_index+1:ao_wf_series_index+1+data_length])
+                # Advance to next child count...
+                ao_wf_series_index += (data_length + 1)
+
+            '''
+            # Debug
+            print('AO wf sample length: {0:d}, AO wf sample length with counts inserted: {1:d}, AO marker length: {2:d},
+             ao_wf_series_index: {3:d}'.format(len(test_ao_wf_series), len(ao_wf_series), len(ao_marker_series), 
+             ao_wf_series_index))
+            '''
+
+            print('Writing analog waveform array to ao_wf.csv')
+            series_to_build.to_csv('ao_wf.csv', index=False)
 
     ###############################################################################
     # Did the user want a COMMS_DATA output?
