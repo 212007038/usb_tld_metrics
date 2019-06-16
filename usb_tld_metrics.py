@@ -709,6 +709,8 @@ def main(arg_list=None):
                         required=False)
     parser.add_argument('-v', dest='verbose', default=False, action='store_true',
                         help='verbose output flag', required=False)
+    parser.add_argument('-s', dest='separate_streams', default=False, action='store_true',
+                        help='write separate steams to CSV files', required=False)
     parser.add_argument('--version', action='version', help='Print version.',
                         version='%(prog)s Version {version}'.format(version=__version__))
 
@@ -1106,6 +1108,24 @@ def main(arg_list=None):
         print('Writing COMMS_DATA C array to ' + c_filename)
         if write_comms_data(final, c_filename) is False:
             print_console_and_log('Failure writing COMMS_DATAQ C array to ' + c_filename)
+
+    ###############################################################################
+    # Did the user want each device/direction/end point in it's own CSV file?
+    # This is useful post analysis in an excel spreadsheet.
+    # The CSV file are much smaller because we are separating data into individual streams.
+    if args.separate_streams is True:
+        # OK, let's split this possible huge database into separate streams...
+        print('Spliting into groups based on Device, direction, end point and address')
+        final_groups = final.groupby(['Device', 'Dir', 'Endp', 'Addr'])
+        for key, g in final_groups:
+            # Create tuple string...
+            print(key[1])
+            tuple_string = "_{0:s}_{1:s}_{2:d}_{3:d}".format(key[0], key[1], key[2], key[3])
+            # Create filename string...
+            stream_filename = os.path.splitext(args.csv_output_file)[0] + tuple_string + '_data.csv'
+            print('Writing: {0:s}...'.format(stream_filename))
+            g.to_csv(stream_filename, index=False, float_format='%.9f')
+
 
     print('--- DONE ---')
     return 0
