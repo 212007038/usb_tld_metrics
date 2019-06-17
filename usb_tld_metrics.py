@@ -724,6 +724,8 @@ def main(arg_list=None):
                         required=False)
     parser.add_argument('-v', dest='verbose', default=False, action='store_true',
                         help='verbose output flag', required=False)
+    parser.add_argument('-a', dest='discard_analog', default=False, action='store_true',
+                        help='AO flag.  If set, will remove AO endpoint from CSV database file', required=False)
     parser.add_argument('-s', dest='separate_streams', default=False, action='store_true',
                         help='write separate steams to CSV files', required=False)
     parser.add_argument('--version', action='version', help='Print version.',
@@ -873,6 +875,11 @@ def main(arg_list=None):
     # This would be a Endpoint or Address of zero
     df = df[df.Endp != 0]
     df = df[df.Addr != 0]
+
+    ###############################################################################
+    # Does the user want to discard the analog output channel?
+    if args.discard_analog is True:
+        df = df[df.Endp != 2]       # analog output is on end point to
 
     ###############################################################################
     # Scope analysis from given start time to end of collection.
@@ -1179,9 +1186,10 @@ def main(arg_list=None):
         for key, g in final_groups:
             # Create tuple string...
             print(key[1])
-            tuple_string = "_{0:s}_{1:s}_{2:d}_{3:d}".format(key[0], key[1], key[2], key[3])
-            # Create filename string...
-            stream_filename = os.path.splitext(args.csv_output_file)[0] + tuple_string + '_data.csv'
+            # Build 2nd half of filename for this group...
+            tuple_string = "_{0:s}_{1:s}_{2:d}_{3:d}_data.csv".format(key[0], key[1], key[2], key[3])
+            # and create filename string...
+            stream_filename = os.path.splitext(args.csv_output_file)[0] + tuple_string
             print('Writing: {0:s}...'.format(stream_filename))
             g.to_csv(stream_filename, index=False, float_format='%.9f')
 

@@ -78,5 +78,15 @@
       ['DC_LEADFAIL_STATUS_LEADS', 121, 56],
       ['DC_LEADFAIL_STATUS_ELECTRODES', 121, 57]
     ]
+  },
+
+  ANALOG_OUTPUT:
+  {
+    'datatype': 'int16',
+    'tags':
+    [
+      ['LEAD VOLTAGE', 122, 1],
+      ['MARKER', 122, 2]
+    ]
   }
 }
