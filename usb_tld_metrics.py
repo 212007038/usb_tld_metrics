@@ -92,6 +92,9 @@ QRS_SAMPLE_INDEX_MASK = 0x0700
 QRS_SAMPLE_INDEX_SHIFT = 8
 QRS_MARKER_OFFSET = 500
 
+
+START_TLD_SEQUENCE = 70000
+
 # endregion
 
 ###############################################################################
@@ -1183,12 +1186,10 @@ def main(arg_list=None):
         # Create tuple string...
         tuple_string = '{0:s}_{1:s}_{2:d}_{3:d}'.format(key[0], key[1], key[2], key[3])
         print('Testing TLD sequence for {0:s}'.format(tuple_string))
-        # Build 2nd half of filename for this group...
-        # and create filename string...
-        previous_sequence = 70000
+        previous_sequence = START_TLD_SEQUENCE
         for index, row in g.iterrows():
             if row['TLD Seq'] != previous_sequence:
-                if previous_sequence != 70000:
+                if previous_sequence != START_TLD_SEQUENCE:
                     print('Tld sequence skip detected, expected: {0:d}, oberved: {1:d}.'.format(previous_sequence,
                                                                                                 row['TLD Seq']))
                 # Goto adapt to new sequence
@@ -1198,6 +1199,7 @@ def main(arg_list=None):
             previous_sequence = previous_sequence & 0xffff  # wrap
         # Did the user want to save the group?
         if args.separate_streams is True:
+            # Build filename for group.
             stream_filename = os.path.splitext(args.csv_output_file)[0] + '_' + tuple_string + '_data.csv'
             print('Writing: {0:s}...'.format(stream_filename))
             g.to_csv(stream_filename, index=False, float_format='%.9f')
