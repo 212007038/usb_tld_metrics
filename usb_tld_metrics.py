@@ -1186,13 +1186,14 @@ def main(arg_list=None):
         # Create tuple string...
         tuple_string = '{0:s}_{1:s}_{2:d}_{3:d}'.format(key[0], key[1], key[2], key[3])
         print('Testing TLD sequence for {0:s}'.format(tuple_string))
-        previous_sequence = START_TLD_SEQUENCE
+        previous_sequence = START_TLD_SEQUENCE  # will fail first test causing adoption of first seq number
         for index, row in g.iterrows():
             if row['TLD Seq'] != previous_sequence:
+                # Is this really a failure?
                 if previous_sequence != START_TLD_SEQUENCE:
-                    print('Tld sequence skip detected, expected: {0:d}, oberved: {1:d}.'.format(previous_sequence,
-                                                                                                row['TLD Seq']))
-                # Goto adapt to new sequence
+                    print('FAIL, Tld sequence skip detected, expected: {0:d}, observed: {1:d}.'
+                          .format(previous_sequence, row['TLD Seq']))
+                # Adapt new sequence
                 previous_sequence = row['TLD Seq']
             # Next sequence...
             previous_sequence = previous_sequence + 1
