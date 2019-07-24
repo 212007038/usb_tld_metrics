@@ -1141,7 +1141,7 @@ def main(arg_list=None):
                 data_length = ao_wf_series.iloc[ao_wf_series_index]
                 assert data_length == 4 or data_length == 5     # must be 4 or 5
                 # QRS and PACE are indicated in the marker flag.  Zero mean neither are present in this sample set.
-                if marker_flag & QRS_COMPLEX_DETECTED_MASK is not 0:
+                if marker_flag & QRS_COMPLEX_DETECTED_MASK is not 0 and 0:
                     # We have a QRS detected within the sample set.
                     # Get the sample number on which it occurred.
                     qrs_sample_index = (marker_flag & QRS_SAMPLE_INDEX_MASK) >> QRS_SAMPLE_INDEX_SHIFT
@@ -1185,13 +1185,15 @@ def main(arg_list=None):
     for key, g in final_groups:
         # Create tuple string...
         tuple_string = '{0:s}_{1:s}_{2:d}_{3:d}'.format(key[0], key[1], key[2], key[3])
+        print('\n')
         print('Testing TLD sequence for {0:s}'.format(tuple_string))
         previous_sequence = START_TLD_SEQUENCE  # will fail first test causing adoption of first seq number
+        # Iterate though entire frame and examine/test the TLD sequence numbers...
         for index, row in g.iterrows():
             if row['TLD Seq'] != previous_sequence:
                 # Is this really a failure?
                 if previous_sequence != START_TLD_SEQUENCE:
-                    print('FAIL, Tld sequence skip detected, expected: {0:d}, observed: {1:d}.'
+                    print('FAIL, TLD sequence skip detected, expected: {0:d}, observed: {1:d}.'
                           .format(previous_sequence, row['TLD Seq']))
                 # Adapt new sequence
                 previous_sequence = row['TLD Seq']
@@ -1200,7 +1202,7 @@ def main(arg_list=None):
             previous_sequence = previous_sequence & 0xffff  # wrap
         # Did the user want to save the group?
         if args.separate_streams is True:
-            # Build filename for group.
+            # Build filename for this group.
             stream_filename = os.path.splitext(args.csv_output_file)[0] + '_' + tuple_string + '_data.csv'
             print('Writing: {0:s}...'.format(stream_filename))
             g.to_csv(stream_filename, index=False, float_format='%.9f')
